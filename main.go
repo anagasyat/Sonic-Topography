@@ -41,28 +41,23 @@ var (
 )
 
 func main() {
-	// 获取可执行文件所在目录
+	// 日志文件
 	exePath, err := os.Executable()
 	if err != nil {
 		log.Fatal("无法获取可执行文件路径:", err)
 	}
 	baseDir := filepath.Dir(exePath)
-
-	// 日志文件
 	logFile, err := os.OpenFile(filepath.Join(baseDir, "sonic-proxy.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err == nil {
 		defer logFile.Close()
 		log.SetOutput(io.MultiWriter(os.Stderr, logFile))
 	}
-	log.Println("=== Sonic Proxy 代理服务器启动（纯API） ===")
-	log.Println("工作目录:", baseDir)
+	log.Println("=== Sonic Proxy 启动（纯 API）===")
 
-	// 路由注册（仅保留网易云代理）
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/netease/search", handleSearch)
 	mux.HandleFunc("/api/netease/lyric", handleLyric)
 	mux.HandleFunc("/api/netease/url", handleURL)
-	mux.HandleFunc("/api/netease/audio", handleAudio)
 
 	// 未匹配路由返回 404
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -76,11 +71,11 @@ func main() {
 	}
 }
 
-// ---------- 跨域中间件 ----------
+// ---------- 中间件 ----------
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Range")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
@@ -310,40 +305,4 @@ func handleURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]any{"url": playableURL})
-}
-
-func handleAudio(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		http.Error(w, "Missing id", http.StatusBadRequest)
-		return
-	}
-	playableURL, err := getNeteasePlayableURL(id)
-	if err != nil || playableURL == "" {
-		http.Error(w, "No playable URL", http.StatusNotFound)
-		return
-	}
-	req, _ := http.NewRequest("GET", playableURL, nil)
-	req.Header.Set("Referer", "https://music.163.com/")
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-	if rangeHeader := r.Header.Get("Range"); rangeHeader != "" {
-		req.Header.Set("Range", rangeHeader)
-	}
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, "Audio proxy failed", http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-	for k, v := range resp.Header {
-		if k == "Content-Type" || k == "Content-Length" || k == "Content-Range" || k == "Accept-Ranges" {
-			w.Header().Set(k, v[0])
-		}
-	}
-	if w.Header().Get("Content-Type") == "" {
-		w.Header().Set("Content-Type", "audio/mpeg")
-	}
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
 }
