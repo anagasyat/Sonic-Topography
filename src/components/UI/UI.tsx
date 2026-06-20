@@ -11,9 +11,10 @@ import { TriggerPreset } from '../../lib/AudioEngine';
 
 // ==================== API 基础地址 ====================
 const DEFAULT_ONLINE_URL = 'https://your-domain-api.workers.dev';
-const LOCAL_PROXY_URL = 'http://localhost:7200';
 const STORAGE_KEY_PROXY_MODE = 'sonic-proxy-mode';
 const STORAGE_KEY_ONLINE_URL = 'sonic-online-url';
+const STORAGE_KEY_LOCAL_PORT = 'sonic-local-port';
+const DEFAULT_LOCAL_PORT = '7200';
 
 // ==================== 类型定义 ====================
 interface NeteaseSong {
@@ -109,11 +110,17 @@ export function UI({ theme, onThemeChange }: UIProps) {
     const saved = localStorage.getItem(STORAGE_KEY_ONLINE_URL);
     return saved || DEFAULT_ONLINE_URL;
   });
+  const [localPort, setLocalPort] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_LOCAL_PORT);
+    return saved || DEFAULT_LOCAL_PORT;
+  });
   const [showEditModal, setShowEditModal] = useState(false);
   const [editUrlInput, setEditUrlInput] = useState(onlineProxyUrl);
+  const [showPortModal, setShowPortModal] = useState(false);
+  const [portInput, setPortInput] = useState(localPort);
 
   // 计算当前 apiBase
-  const apiBase = proxyMode === 'online' ? onlineProxyUrl : LOCAL_PROXY_URL;
+  const apiBase = proxyMode === 'online' ? onlineProxyUrl : `http://localhost:${localPort}`;
 
   // 搜索
   const [searchQuery, setSearchQuery] = useState('');
@@ -434,7 +441,6 @@ export function UI({ theme, onThemeChange }: UIProps) {
         setShowPlaylistPanel={setShowPlaylistPanel}
         accentHex={accentHex}
       >
-        {/* 代理源切换 */}
         <div className="flex flex-col items-center gap-1 mt-2">
           <button
             onClick={toggleProxyMode}
@@ -447,16 +453,28 @@ export function UI({ theme, onThemeChange }: UIProps) {
           <div
             className="text-[6px] text-center leading-tight border border-orange-500/60 px-0.5 py-0.5 rounded-sm"
             style={{
-              color: proxyMode === 'online' ? '#f97316' : '#f97316',
+              color: '#f97316',
             }}
           >
-            {proxyMode === 'online' ? 'Online' : 'Local'}
+            {proxyMode === 'online' ? 'online' : 'local'}
           </div>
           {proxyMode === 'online' && (
             <button
               onClick={() => {
                 setEditUrlInput(onlineProxyUrl);
                 setShowEditModal(true);
+              }}
+              className="uppercase tracking-[0.2em] text-[8px] opacity-40 hover:opacity-100 transition-opacity cursor-pointer"
+              style={{ writingMode: 'vertical-rl' }}
+            >
+              Edit
+            </button>
+          )}
+          {proxyMode === 'local' && (
+            <button
+              onClick={() => {
+                setPortInput(localPort);
+                setShowPortModal(true);
               }}
               className="uppercase tracking-[0.2em] text-[8px] opacity-40 hover:opacity-100 transition-opacity cursor-pointer"
               style={{ writingMode: 'vertical-rl' }}
@@ -620,6 +638,45 @@ export function UI({ theme, onThemeChange }: UIProps) {
               </button>
               <button
                 onClick={() => handleSaveOnlineUrl(editUrlInput)}
+                className="px-3 py-2 rounded-sm border border-[#00d4ff]/40 text-[10px] uppercase tracking-[0.15em] text-[#00d4ff] hover:bg-[#00d4ff] hover:text-black"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 编辑本地端口模态框 */}
+      {showPortModal && (
+        <div className="absolute inset-0 z-[200] pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-[400px] border border-white/10 rounded-sm p-6" style={{ background: 'rgba(5,10,15,0.96)' }}>
+            <div className="text-[12px] uppercase tracking-[0.2em] text-white/70 mb-3">编辑本地代理端口</div>
+            <input
+              type="text"
+              value={portInput}
+              onChange={(e) => setPortInput(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[13px] text-white outline-none focus:border-white/30 mb-4"
+              placeholder="例如 7200"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowPortModal(false)}
+                className="px-3 py-2 rounded-sm border border-white/10 text-[10px] uppercase tracking-[0.15em] text-white/45 hover:text-white"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  const port = portInput.trim();
+                  if (port && /^\d+$/.test(port)) {
+                    setLocalPort(port);
+                    localStorage.setItem(STORAGE_KEY_LOCAL_PORT, port);
+                    setShowPortModal(false);
+                  } else {
+                    alert('请输入有效端口号');
+                  }
+                }}
                 className="px-3 py-2 rounded-sm border border-[#00d4ff]/40 text-[10px] uppercase tracking-[0.15em] text-[#00d4ff] hover:bg-[#00d4ff] hover:text-black"
               >
                 保存
