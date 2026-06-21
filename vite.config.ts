@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs/promises';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 
 const neteaseHeaders = {
   Referer: 'https://music.163.com/',
@@ -16,12 +16,18 @@ const searchCacheTtl = 1000 * 60 * 5;
 const dataDir = path.resolve(__dirname, 'data');
 const playlistsPath = path.join(dataDir, 'playlists.json');
 
+// ---------- 统一响应工具（已内置 CORS 头） ----------
 function writeJson(res: any, status: number, data: unknown) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  // ====== 添加 CORS 头 ======
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
   res.end(JSON.stringify(data));
 }
 
+// ---------- 辅助函数 ----------
 function createDefaultPlaylists() {
   return [
     { id: 'favorites', name: 'Favorites', songs: [] },
@@ -97,10 +103,29 @@ async function filterPlayableSongs(rawSongs: any[], resultLimit: number) {
   return playableSongs;
 }
 
+// ---------- Vite 插件（含 CORS 中间件） ----------
 function neteaseApiPlugin() {
   return {
     name: 'netease-api-proxy',
     configureServer(server: any) {
+      // ====== 全局 CORS 中间件（作用于所有 /api 请求） ======
+      server.middlewares.use('/api', (req: any, res: any, next: any) => {
+        // 设置 CORS 头（对所有 /api 下的请求生效）
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+
+        // 处理预检 OPTIONS 请求
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 200;
+          res.end();
+          return;
+        }
+
+        next();
+      });
+
+      // ---------- 路由定义 ----------
       server.middlewares.use('/api/playlists', async (req: any, res: any, next: any) => {
         try {
           if (req.method === 'GET') {
@@ -241,6 +266,9 @@ function neteaseApiPlugin() {
             if (value) res.setHeader(header, value);
           });
 
+          // 音频响应也要加上 CORS 头（确保跨域加载）
+          res.setHeader('Access-Control-Allow-Origin', '*');
+
           if (!res.getHeader('Content-Type')) res.setHeader('Content-Type', 'audio/mpeg');
           if (audioResponse.body) {
             const reader = audioResponse.body.getReader();
@@ -250,7 +278,8 @@ function neteaseApiPlugin() {
                 res.end();
                 return;
               }
-              res.write(Buffer.from(value), pump);
+              res.write(Buffer.from(value));
+              pump();
             };
             pump();
           } else {
@@ -264,19 +293,18 @@ function neteaseApiPlugin() {
   };
 }
 
+// ---------- Vite 配置 ----------
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss(), neteaseApiPlugin()],
+    base: './',
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

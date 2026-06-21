@@ -10,7 +10,7 @@ import { extractLyricsFromAudio } from '../../lib/metadata';
 import { TriggerPreset } from '../../lib/AudioEngine';
 
 // ==================== API 基础地址 ====================
-const DEFAULT_ONLINE_URL = 'https://your-domain-api.workers.dev';
+const DEFAULT_ONLINE_URL = 'http://127.0.0.1:7200';
 const STORAGE_KEY_PROXY_MODE = 'sonic-proxy-mode';
 const STORAGE_KEY_ONLINE_URL = 'sonic-online-url';
 const STORAGE_KEY_LOCAL_PORT = 'sonic-local-port';
@@ -104,7 +104,7 @@ export function UI({ theme, onThemeChange }: UIProps) {
 
   const [proxyMode, setProxyMode] = useState<'online' | 'local'>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_PROXY_MODE);
-    return saved === 'local' ? 'local' : 'online';
+    return saved === 'online' ? 'online' : 'local';
   });
   const [onlineProxyUrl, setOnlineProxyUrl] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY_ONLINE_URL);
@@ -138,7 +138,7 @@ export function UI({ theme, onThemeChange }: UIProps) {
 
   // ---------- 代理模式切换 ----------
   const toggleProxyMode = () => {
-    const newMode = proxyMode === 'online' ? 'local' : 'online';
+    const newMode = proxyMode === 'local' ? 'online' : 'local';
     setProxyMode(newMode);
     localStorage.setItem(STORAGE_KEY_PROXY_MODE, newMode);
     // 清空搜索和播放状态，避免数据混乱
@@ -456,7 +456,7 @@ export function UI({ theme, onThemeChange }: UIProps) {
               color: '#f97316',
             }}
           >
-            {proxyMode === 'online' ? 'online' : 'local'}
+            {proxyMode === 'local' ? 'local' : 'online'}
           </div>
           {proxyMode === 'online' && (
             <button

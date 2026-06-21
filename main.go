@@ -52,7 +52,7 @@ func main() {
 		defer logFile.Close()
 		log.SetOutput(io.MultiWriter(os.Stderr, logFile))
 	}
-	log.Println("=== Sonic Proxy 启动（纯 API）===")
+	log.Println("=== Sonic Proxy 启动 ===")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/netease/search", handleSearch)

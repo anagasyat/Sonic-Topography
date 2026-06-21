@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -56,19 +58,24 @@ func main() {
 		defer logFile.Close()
 		log.SetOutput(io.MultiWriter(os.Stderr, logFile))
 	}
-	log.Println("=== Sonic Topography 服务器启动（含静态界面 + 代理）===")
+	log.Println("=== Sonic Topography 启动 ===")
 	log.Println("工作目录:", baseDir)
 
 	mux := http.NewServeMux()
-	// 静态文件服务（SPA 支持）
 	mux.HandleFunc("/", serveStatic)
-	// 网易云 API 代理
 	mux.HandleFunc("/api/netease/search", handleSearch)
 	mux.HandleFunc("/api/netease/lyric", handleLyric)
 	mux.HandleFunc("/api/netease/url", handleURL)
 
 	handler := corsMiddleware(mux)
 	log.Println("HTTP 服务器启动在 :7200")
+
+	// 自动打开浏览器
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		openBrowser("http://localhost:7200")
+	}()
+
 	if err := http.ListenAndServe(":7200", handler); err != nil {
 		log.Fatal("HTTP 服务器错误:", err)
 	}
@@ -363,4 +370,20 @@ func handleURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]any{"url": playableURL})
+}
+
+// ---------- 打开浏览器辅助函数 ----------
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default: // Linux, FreeBSD, etc.
+		cmd = exec.Command("xdg-open", url)
+	}
+	if err := cmd.Start(); err != nil {
+		log.Printf("打开浏览器失败: %v", err)
+	}
 }
