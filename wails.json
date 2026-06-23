@@ -1,0 +1,19 @@
+{
+  "name": "sonic-topography",
+  "outputfilename": "sonic-topography",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Yann. & AJIN.",
+    "email": ""
+  },
+  "info": {
+    "companyName": "Yann. & AJIN.",
+    "productName": "sonic-topography",
+    "productVersion": "2.0.0",
+    "copyright": "Yann. & AJIN.",
+    "comments": ""
+  }
+}

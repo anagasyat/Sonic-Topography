@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.side-nav-trigger {
+  width: 28px;
+}
+
+.side-nav-trigger.is-mobile-open {
+  width: min(78vw, 220px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .side-nav-trigger:hover {
+    width: min(78vw, 220px);
+  }
+
+  .side-nav-trigger:hover .side-nav-panel {
+    transform: translateX(0) !important;
+  }
+}
+
+.side-nav-panel {
+  align-items: stretch;
+  padding: 24px 12px;
+  width: min(78vw, 220px);
+}
+
+.side-nav-panel button {
+  font-size: 13px !important;
+  justify-content: flex-start;
+  letter-spacing: 0.14em !important;
+  margin-bottom: 14px;
+  min-height: 44px;
+  padding: 0 12px;
+  text-align: left;
+  white-space: nowrap;
+  width: 100%;
+  writing-mode: horizontal-tb !important;
+}
+
+.side-nav-panel .side-nav-bottom {
+  gap: 12px;
+  width: 100%;
+}
+
+.mobile-hide-aux-ui {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .player-panel {
+    align-items: center;
+    bottom: 12px;
+    display: flex;
+    gap: 10px;
+    left: 12px;
+    padding: 10px 12px;
+    right: 12px;
+    top: auto;
+    width: auto;
+    z-index: 58;
+  }
+
+  .player-panel-header {
+    align-items: center;
+    flex: 1 1 auto;
+    gap: 10px;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  .player-panel-title {
+    flex: 1 1 auto;
+    font-size: 14px;
+    letter-spacing: 0;
+    line-height: 1.2;
+    min-width: 0;
+  }
+
+  .player-panel-theme {
+    flex: 0 0 auto;
+  }
+
+  .player-panel-meta,
+  .player-panel-progress,
+  .player-panel-time,
+  .player-panel-volume {
+    display: none !important;
+  }
+
+  .player-panel-controls {
+    flex: 0 0 auto;
+    gap: 0;
+    justify-content: flex-end;
+  }
+
+  .player-panel-actions {
+    gap: 12px;
+  }
+
+  .player-panel-actions button {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  .mobile-hide-aux-ui {
+    display: none !important;
+  }
+
+  .side-nav-panel {
+    padding: 20px 10px;
+  }
+
+  .side-nav-panel button {
+    font-size: 14px !important;
+    min-height: 46px;
+  }
+}
